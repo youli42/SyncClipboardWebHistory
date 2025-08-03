@@ -1,3 +1,7 @@
+# 本地剪贴板文件
+file/
+/SyncClipboard.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

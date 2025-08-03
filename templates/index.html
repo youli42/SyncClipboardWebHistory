@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SyncClipboard 历史记录</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>剪贴板历史记录</h1>
+        
+        <!-- 搜索和筛选区 -->
+        <div class="filters">
+            <input type="text" id="search" placeholder="搜索内容">
+            <select id="type-filter">
+                <option value="">所有类型</option>
+                <option value="Text">文本</option>
+                <option value="Image">图片</option>
+                <option value="File">文件</option>
+            </select>
+            <input type="date" id="start-date">
+            <input type="date" id="end-date">
+            <button id="apply-filter">应用筛选</button>
+            <button id="toggle-starred">显示收藏</button>
+        </div>
+        
+        <!-- 历史记录列表 -->
+        <div class="history-list">
+            {% for item in history %}
+            <div class="history-item" data-id="{{ item.id }}">
+                <div class="header">
+                    <span class="timestamp">{{ item.timestamp }}</span>
+                    <span class="type">{{ item.type }}</span>
+                    {% if item.from_source %}
+                    <span class="source">来源: {{ item.from_source }}</span>
+                    {% endif %}
+                    <span class="star {% if item.is_starred %}starred{% endif %}">★</span>
+                </div>
+                <div class="content">
+                    {% if item.type == "Text" %}
+                    <pre>{{ item.content }}</pre>
+                    {% elif item.type == "Image" %}
+                    <img src="{{ url_for('download_file', filename=item.file_path.split('/')[-1]) }}" alt="图片" width="100">
+                    {% else %}
+                    <a href="{{ url_for('download_file', filename=item.file_path.split('/')[-1]) }}" 
+                       download="{{ item.content }}">下载文件</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- 分页 -->
+        <div class="pagination">
+            <a href="{{ url_for('index', page=page-1) if page > 1 else '#' }}">上一页</a>
+            <span>第 {{ page }} 页</span>
+            <a href="{{ url_for('index', page=page+1) }}">下一页</a>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
