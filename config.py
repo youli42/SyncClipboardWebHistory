@@ -5,8 +5,10 @@ class Config:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     
     # JSON 文件路径
-    SYNC_CLIPBOARD_JSON = os.path.join(BASE_DIR, "SyncClipboard.json")
+    SYNC_CLIPBOARD_JSON_FILE = "SyncClipboard.json" # 同步文件名
+    SYNC_CLIPBOARD_JSON_PATH = os.path.join(BASE_DIR, SYNC_CLIPBOARD_JSON_FILE) # 主同步文件路径
     
+
     # 数据库配置
     DB_PATH = os.path.join(BASE_DIR, "db", "clipboard_history.db")
     

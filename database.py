@@ -68,6 +68,7 @@ class DatabaseManager:
         file_name = data.get("File", "")
         clipboard = data.get("Clipboard", "")
         from_source = data.get("From", "")
+        tags = data.get("Tag", "")
         
         # 备份文件（如果是图片或文件）
         backup_path = None

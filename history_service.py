@@ -5,13 +5,15 @@ from watchdog.events import FileSystemEventHandler
 from config import Config
 from database import DatabaseManager
 
+# 监控 SyncClipboard.json 文件的变更，并将变更记录到数据库中
+
 class JSONChangeHandler(FileSystemEventHandler):
     def __init__(self):
         self.last_content = self.get_current_content()
     
     def get_current_content(self):
         try:
-            with open(Config.SYNC_CLIPBOARD_JSON, 'r', encoding='utf-8') as f:
+            with open(Config.SYNC_CLIPBOARD_JSON_PATH, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except Exception as e:
             print(f"读取JSON文件错误: {e}")
