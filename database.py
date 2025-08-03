@@ -15,12 +15,14 @@ class DatabaseManager:
         self.create_tables()
 
         # 配置页面功能
+        cursor = self.conn.cursor()  # 修复：先获取游标
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS settings (
                 key TEXT PRIMARY KEY,
                 value TEXT
             )
         ''')
+        self.conn.commit()
         
     def create_tables(self):
         cursor = self.conn.cursor()
