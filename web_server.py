@@ -1,11 +1,19 @@
-
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory, g
 from database import DatabaseManager
 from config import Config
 
 app = Flask(__name__, template_folder=Config.TEMPLATES_DIR, static_folder=Config.STATIC_DIR)
 
-db = DatabaseManager()
+def get_db():
+    if 'db' not in g:
+        g.db = DatabaseManager()
+    return g.db
+
+@app.teardown_appcontext
+def close_db(exception):
+    db = g.pop('db', None)
+    if db is not None:
+        db.close()
 
 @app.route('/')
 def index():
@@ -14,7 +22,7 @@ def index():
     per_page = 30
     offset = (page - 1) * per_page
     
-    history = db.get_history(limit=per_page, offset=offset)
+    history = get_db().get_history(limit=per_page, offset=offset)
     return render_template('index.html', history=history, page=page)
 
 @app.route('/history')
@@ -28,12 +36,12 @@ def get_history():
         'starred': request.args.get('starred', '') == 'true'
     }
     
-    history = db.get_history(filters=filters)
+    history = get_db().get_history(filters=filters)
     return jsonify(history)
 
 @app.route('/star/<int:item_id>', methods=['POST'])
 def toggle_star(item_id):
-    new_status = db.toggle_star(item_id)
+    new_status = get_db().toggle_star(item_id)
     return jsonify({'starred': new_status})
 
 @app.route('/download/<path:filename>')
@@ -50,17 +58,17 @@ def settings():
             'max_storage': request.form['max_storage']
         }
         
-        db.set_setting('max_items', settings['max_items'])
-        db.set_setting('max_days', settings['max_days'])
-        db.set_setting('max_storage', settings['max_storage'])
+        get_db().set_setting('max_items', settings['max_items'])
+        get_db().set_setting('max_days', settings['max_days'])
+        get_db().set_setting('max_storage', settings['max_storage'])
         
         return jsonify({'status': 'success'})
     
     # 获取当前设置
     settings_data = {
-        'max_items': db.get_setting('max_items', Config.MAX_HISTORY_ITEMS),
-        'max_days': db.get_setting('max_days', Config.MAX_HISTORY_DAYS),
-        'max_storage': db.get_setting('max_storage', Config.MAX_STORAGE_MB)
+        'max_items': get_db().get_setting('max_items', Config.MAX_HISTORY_ITEMS),
+        'max_days': get_db().get_setting('max_days', Config.MAX_HISTORY_DAYS),
+        'max_storage': get_db().get_setting('max_storage', Config.MAX_STORAGE_MB)
     }
     return render_template('settings.html', settings=settings_data)
 
@@ -71,29 +79,29 @@ def collections():
     if request.method == 'POST':
         name = request.form['name']
         parent_id = request.form.get('parent_id', None)
-        db.create_collection(name, parent_id)
+        get_db().create_collection(name, parent_id)
         return jsonify({'status': 'success'})
     
-    collections = db.get_collections()
+    collections = get_db().get_collections()
     return render_template('collections.html', collections=collections)
 
 @app.route('/collection/<int:collection_id>')
 def view_collection(collection_id):
-    items = db.get_collection_items(collection_id)
+    items = get_db().get_collection_items(collection_id)
     return render_template('collection.html', items=items, collection_id=collection_id)
 
 @app.route('/collection/add', methods=['POST'])
 def add_to_collection():
     collection_id = request.form['collection_id']
     history_id = request.form['history_id']
-    db.add_to_collection(collection_id, history_id)
+    get_db().add_to_collection(collection_id, history_id)
     return jsonify({'status': 'success'})
 
 @app.route('/collection/remove', methods=['POST'])
 def remove_from_collection():
     collection_id = request.form['collection_id']
     history_id = request.form['history_id']
-    db.remove_from_collection(collection_id, history_id)
+    get_db().remove_from_collection(collection_id, history_id)
     return jsonify({'status': 'success'})
 
 

@@ -2,6 +2,9 @@
 file/
 /SyncClipboard.json
 
+# 测试文件
+db/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
