@@ -34,10 +34,10 @@ class JSONChangeHandler(FileSystemEventHandler):
 
 def main():
     # 不需要提前创建 db
-    event_handler = JSONChangeHandler()
-    observer = Observer()
-    observer.schedule(event_handler, path='.', recursive=False)
-    observer.start()
+    event_handler = JSONChangeHandler() # 创建 JSONChangeHandler事件处理对象
+    observer = Observer() # 创建文件系统观察者 (Observer)
+    observer.schedule(event_handler, path='.', recursive=False) #安排观察任务：在当前目录 (.) 下监控文件，不递归子目录 (recursive=False)
+    observer.start() # 启动观察者
     try:
         print("监控服务已启动...")
         while True:

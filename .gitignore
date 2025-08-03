@@ -5,6 +5,7 @@ file/
 # 测试文件
 db/
 clipboard_history.db
+db/clipboard_history.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -213,4 +214,5 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
-db/clipboard_history.db
+
+
