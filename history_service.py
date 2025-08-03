@@ -6,8 +6,7 @@ from config import Config
 from database import DatabaseManager
 
 class JSONChangeHandler(FileSystemEventHandler):
-    def __init__(self, db):
-        self.db = db
+    def __init__(self):
         self.last_content = self.get_current_content()
     
     def get_current_content(self):
@@ -22,41 +21,30 @@ class JSONChangeHandler(FileSystemEventHandler):
         if event.src_path.endswith("SyncClipboard.json"):
             try:
                 current_content = self.get_current_content()
-                
-                # 检查内容是否实际发生变化
                 if current_content != self.last_content:
                     self.last_content = current_content
-                    
-                    # 将新内容加入数据库
-                    self.db.add_history_item(current_content)
-                    
-                    # 清理旧记录
-                    self.db.cleanup_history()
-                    
-                    # 更新网页显示
-                    # TODO: 实际项目中，这里应该触发网页更新
+                    # 每次变更都新建一个数据库连接
+                    db = DatabaseManager()
+                    db.add_history_item(current_content)
+                    db.cleanup_history()
+                    db.close()
                     print(f"已更新历史记录")
             except Exception as e:
                 print(f"处理JSON变更错误: {e}")
 
 def main():
-    db = DatabaseManager()
-    
-    # 监控JSON文件变化
-    event_handler = JSONChangeHandler(db)
+    # 不需要提前创建 db
+    event_handler = JSONChangeHandler()
     observer = Observer()
     observer.schedule(event_handler, path='.', recursive=False)
     observer.start()
-    
     try:
         print("监控服务已启动...")
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
         observer.stop()
-    
     observer.join()
-    db.close()
 
 if __name__ == "__main__":
     main()
