@@ -1,0 +1,2 @@
+# SyncClipboardWebHistory
+SyncClipboard在线剪贴板的在线历史记录功能
