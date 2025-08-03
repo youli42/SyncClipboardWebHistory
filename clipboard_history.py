@@ -2,6 +2,7 @@ import os
 import json
 import time
 import shutil
+import html
 from datetime import datetime
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -75,7 +76,6 @@ class ClipboardHandler(FileSystemEventHandler):
         with open(HISTORY_FILE, "r", encoding="utf-8") as f:
             history = json.load(f)
         
-        # 按时间倒序排列
         history.reverse()
         
         html_content = f"""
@@ -92,21 +92,37 @@ class ClipboardHandler(FileSystemEventHandler):
                 .image-content {{ max-width: 100%; margin-top: 10px; }}
                 .type-label {{ display: inline-block; padding: 2px 6px; background: #eee; border-radius: 3px; font-size: 0.8em; }}
             </style>
+            <!-- 引入 marked.js 用于 Markdown 渲染 -->
+            <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
         </head>
         <body>
             <h1>剪贴板历史记录</h1>
             <div id="history">
         """
         
-        for entry in history:
+        for idx, entry in enumerate(history):
             data = entry["data"]
             timestamp = datetime.fromisoformat(entry["timestamp"]).strftime("%Y-%m-%d %H:%M:%S")
             type_label = f'<span class="type-label">{data["Type"]}</span>'
             
             content_html = ""
             if data["Type"] == "Text":
-                text_content = data["Clipboard"].encode('utf-8').decode('unicode_escape')
-                content_html = f'<div class="text-content">{text_content}</div>'
+                text_content = data["Clipboard"]
+                # 简单判断格式
+                if text_content.strip().startswith("<") and text_content.strip().endswith(">"):
+                    # 可能是 HTML
+                    content_html = f'<div class="text-content">{text_content}</div>'
+                elif any(sym in text_content for sym in ['#', '*', '-', '`', '[', ']']):
+                    # 可能是 Markdown，前端渲染
+                    content_html = f'<div class="text-content" id="md-{idx}">{html.escape(text_content)}</div>'
+                    content_html += f"""
+                    <script>
+                    document.getElementById('md-{idx}').innerHTML = marked.parse(document.getElementById('md-{idx}').innerText);
+                    </script>
+                    """
+                else:
+                    # 普通文本
+                    content_html = f'<div class="text-content">{html.escape(text_content)}</div>'
             elif data["Type"] == "Image" and data["File"]:
                 img_path = os.path.join(HISTORY_IMAGES_DIR, data["File"])
                 content_html = f'<img src="{img_path}" class="image-content" alt="剪贴板图片">'
