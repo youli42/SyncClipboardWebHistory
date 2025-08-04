@@ -6,6 +6,7 @@ file/
 db/
 clipboard_history.db
 db/clipboard_history.db
+backup/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
