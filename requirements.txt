@@ -1,4 +1,11 @@
+# 文件监控
 watchdog
+
+# web 服务
 flask
-# sqlite3
 pygments
+
+# 数据库
+# Peewee
+Sqlmodel
+# sqlite3
