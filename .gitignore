@@ -3,10 +3,14 @@ file/
 /SyncClipboard.json
 
 # 测试文件
-db/
+/db/
 clipboard_history.db
 db/clipboard_history.db
-backup/
+/backup/
+# Learn/
+# 测试数据库
+/Learn/db/history.db
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
