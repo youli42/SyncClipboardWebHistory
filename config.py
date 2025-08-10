@@ -11,7 +11,8 @@ class Config:
 
     # 数据库配置
     DB_PATH = os.path.join(BASE_DIR, "db", "clipboard_history.db")
-    
+    DB_LOG_ENABLED = True  # 是否启用数据库日志
+
     # 备份配置
     BACKUP_DIR = os.path.join(BASE_DIR, "backup")
     

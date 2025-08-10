@@ -4,6 +4,7 @@ import signal
 import sys
 import web_server
 import history_service
+import database
 
 # 全局退出标志
 exit_event = threading.Event()
@@ -18,7 +19,8 @@ def start_monitor():
 def start_web():
     """启动 Web 服务（支持优雅退出）"""
     # 关键修复：禁用重载器
-    web_server.socketio.run(web_server.app, port=5000, debug=True)  # 用 socketio.run 启动
+    # web_server.socketio.run(web_server.app, port=5000, debug=True)  # 用 socketio.run 启动
+    web_server.socketio.run(web_server.app, port=5000, debug=True, use_reloader=False)  # 禁用重载器
 
 def signal_handler(sig, frame):
     """处理中断信号"""
@@ -39,6 +41,9 @@ def signal_handler(sig, frame):
         sys.exit(0)
 
 if __name__ == "__main__":
+    # 初始化数据库
+    db_engine = database.init_db()
+    
     # 注册信号处理器
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
