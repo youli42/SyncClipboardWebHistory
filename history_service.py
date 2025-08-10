@@ -5,7 +5,12 @@ import threading
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from config import Config
-# from database import DatabaseManager
+from database import add_history_item_from_json
+
+"""
+​主线程​​：通过watchdog监控文件变化（同步阻塞）
+​​子线程​​：专门处理通知队列（异步非阻塞）
+"""
 
 SOCKETIO_SERVER = 'http://localhost:5000'
 
@@ -33,7 +38,7 @@ class JSONChangeHandler(FileSystemEventHandler):
         self.notification_thread.start()
 
     def process_notification_queue(self):
-        """处理通知队列的后台线程"""
+        """在独立的线程中处理通知：处理通知队列的后台线程"""
         while not self.stop_notification.is_set():
             if self.notification_queue:
                 event_type = self.notification_queue.pop(0)
@@ -45,15 +50,17 @@ class JSONChangeHandler(FileSystemEventHandler):
         try:
             if not self.connected:
                 # 尝试连接（带超时）
-                self.sio.connect(SOCKETIO_SERVER, wait_timeout=5)
+                self.sio.connect(SOCKETIO_SERVER, wait_timeout=5) # 连接Socket.IO服务器
                 self.connected = True
                 print("Socket.IO 连接成功")
             
             if self.connected:
-                self.sio.emit(event_type)
+                self.sio.emit(event_type) # ⭐发送通知⭐
                 print(f"已发送 {event_type} 通知")
         except Exception as e:
-            print(f"发送通知失败: {e}")
+            
+            # print(f"发送通知失败: {e}")
+
             self.connected = False
             # 短暂延迟后重试连接
             time.sleep(1)
@@ -66,19 +73,15 @@ class JSONChangeHandler(FileSystemEventHandler):
             print(f"读取JSON文件错误: {e}")
             return {}
 
-    def on_modified(self, event):
-        if event.src_path.endswith("SyncClipboard.json"):
+    def on_modified(self, event): # 处理文件修改事件
+        if event.src_path.endswith("SyncClipboard.json"): # 仅处理特定文件
             try:
                 current_content = self.get_current_content()
                 if current_content != self.last_content:
                     self.last_content = current_content
-                    
-                    # # 数据库操作（保持同步）
-                    # db = DatabaseManager()
-                    # db.add_history_item(current_content)
-                    # db.cleanup_history()
-                    # db.close()
-                    print("已更新历史记录")
+
+                    new_id = add_history_item_from_json(current_content)  # 将JSON内容添加到历史记录
+                    print("已更新历史记录", new_id)
                     
                     # 将通知加入队列（非阻塞）
                     self.notification_queue.append('history_update')
