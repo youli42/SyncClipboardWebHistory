@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-6">
+    <h2 class="text-xl font-bold mb-4">剪贴板历史记录</h2>
+    
+    <!-- 筛选器 -->
+    <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div class="flex flex-wrap gap-2 mb-3">
+            <span class="text-sm text-gray-500">类型筛选:</span>
+            <button class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">全部</button>
+            <button class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">文本</button>
+            <button class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">图片</button>
+            <button class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">文件</button>
+        </div>
+        
+        <div class="flex flex-wrap gap-2 mb-3">
+            <span class="text-sm text-gray-500">来源筛选:</span>
+            <button class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">全部</button>
+            <button class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">Nova11</button>
+            <button class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">其他设备</button>
+        </div>
+        
+        <div class="flex flex-wrap gap-2">
+            <span class="text-sm text-gray-500">时间筛选:</span>
+            <button class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">全部时间</button>
+            <button class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">今天</button>
+            <button class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">本周</button>
+            <button class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">本月</button>
+        </div>
+    </div>
+    
+    <!-- 历史记录列表 -->
+    {% if records %}
+    <div class="space-y-4">
+        {% for record in records %}
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden card-hover">
+            <div class="p-4">
+                <!-- 元数据信息 -->
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex items-center space-x-3">
+                        <!-- 类型图标 -->
+                        <span class="p-2 rounded-full 
+                            {% if record['type'] == 'Text' %}bg-blue-100 text-blue-600{% endif %}
+                            {% if record['type'] == 'Image' %}bg-green-100 text-green-600{% endif %}
+                            {% if record['type'] == 'File' %}bg-purple-100 text-purple-600{% endif %}">
+                            <i class="{% if record['type'] == 'Text' %}fa-file-text-o{% endif %}
+                                     {% if record['type'] == 'Image' %}fa-picture-o{% endif %}
+                                     {% if record['type'] == 'File' %}fa-file-archive-o{% endif %}"></i>
+                        </span>
+                        
+                        <div>
+                            <div class="text-sm text-gray-500">
+                                {{ record['timestamp'] }}
+                                {% if record['source'] %}
+                                <span class="ml-2 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">{{ record['source'] }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="text-sm font-medium text-gray-700 capitalize">{{ record['type'] }} 内容</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-2">
+                        <!-- 下载按钮 (仅文件和图片) -->
+                        {% if record['type'] in ['File', 'Image'] and record['file_name'] %}
+                        <a href="{{ url_for('download_file', item_id=record['id']) }}" 
+                           class="p-2 text-gray-500 hover:text-primary transition-custom"
+                           title="下载">
+                            <i class="fa fa-download"></i>
+                        </a>
+                        {% endif %}
+                        
+                        <!-- 收藏按钮 -->
+                        <a href="{{ url_for('toggle_favorite', item_id=record['id']) }}" 
+                           class="favorite-btn p-2 text-gray-500 hover:text-yellow-400 transition-custom"
+                           title="{% if record['is_favorite'] %}取消收藏{% else %}收藏{% endif %}">
+                            <i class="{% if record['is_favorite'] %}fa-star text-yellow-400{% else %}fa-star-o{% endif %}"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- 内容预览 -->
+                <div class="mt-2">
+                    {% if record['type'] == 'Text' %}
+                    <div class="text-gray-800 break-words">
+                        {{ record['content']|truncate(200) }}
+                    </div>
+                    
+                    {% elif record['type'] == 'Image' %}
+                    <div class="flex items-center">
+                        <div class="w-24 h-24 bg-gray-100 rounded flex items-center justify-center overflow-hidden mr-3">
+                            <i class="fa fa-picture-o text-gray-400 text-3xl"></i>
+                            <!-- 实际应用中应显示图片缩略图 -->
+                            <!-- <img src="{{ url_for('static', filename='backups/' + record['file_name']) }}" alt="图片预览" class="w-full h-full object-cover"> -->
+                        </div>
+                        <div class="text-gray-700">
+                            图片文件: {{ record['file_name'] or '未命名图片' }}
+                        </div>
+                    </div>
+                    
+                    {% elif record['type'] == 'File' %}
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center mr-3">
+                            <i class="fa fa-file-archive-o text-gray-600"></i>
+                        </div>
+                        <div class="text-gray-700">
+                            文件: {{ record['file_name'] or '未命名文件' }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+        <i class="fa fa-clipboard text-gray-300 text-5xl mb-4"></i>
+        <h3 class="text-lg font-medium text-gray-700 mb-2">暂无剪贴板历史记录</h3>
+        <p class="text-gray-500">使用SyncClipboard复制内容后，这里将显示历史记录</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -10,7 +10,7 @@ db/clipboard_history.db
 # Learn/
 # 测试数据库
 /Learn/db/history.db
-
+.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

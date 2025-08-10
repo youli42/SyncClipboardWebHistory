@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h2 class="text-xl font-bold mb-6">应用设置</h2>
+    
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <h3 class="text-lg font-medium mb-4 text-gray-800">历史记录设置</h3>
+        
+        <form method="POST" action="{{ url_for('update_settings') }}">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1" for="max_history_items">
+                    最大历史记录数量
+                </label>
+                <input type="number" id="max_history_items" name="max_history_items" 
+                       value="{{ settings['max_history_items'] if settings else 1000 }}"
+                       min="10" max="10000" step="10"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                <p class="mt-1 text-xs text-gray-500">设置可保存的最大剪贴板历史记录数量</p>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1" for="max_storage_days">
+                    最大保存时间 (天)
+                </label>
+                <input type="number" id="max_storage_days" name="max_storage_days" 
+                       value="{{ settings['max_storage_days'] if settings else 30 }}"
+                       min="1" max="365" step="1"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                <p class="mt-1 text-xs text-gray-500">超过此天数的历史记录将被自动清理</p>
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-1" for="max_storage_size">
+                    最大存储空间 (MB)
+                </label>
+                <input type="number" id="max_storage_size" name="max_storage_size" 
+                       value="{{ settings['max_storage_size'] if settings else 1024 }}"
+                       min="100" max="10240" step="100"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                <p class="mt-1 text-xs text-gray-500">历史记录（包括文件和图片）占用的最大存储空间</p>
+            </div>
+            
+            <div class="flex justify-end">
+                <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-custom">
+                    保存设置
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-sm p-6">
+        <h3 class="text-lg font-medium mb-4 text-gray-800">数据管理</h3>
+        
+        <div class="space-y-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h4 class="font-medium text-gray-800">清理历史记录</h4>
+                    <p class="text-sm text-gray-500">删除所有历史记录（不包括收藏内容）</p>
+                </div>
+                <button class="px-3 py-1.5 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-custom text-sm">
+                    立即清理
+                </button>
+            </div>
+            
+            <div class="border-t border-gray-100 pt-4 flex justify-between items-center">
+                <div>
+                    <h4 class="font-medium text-gray-800">导出历史记录</h4>
+                    <p class="text-sm text-gray-500">将所有历史记录导出为JSON文件</p>
+                </div>
+                <button class="px-3 py-1.5 border border-primary/30 text-primary rounded-lg hover:bg-primary/5 transition-custom text-sm">
+                    导出数据
+                </button>
+            </div>
+            
+            <div class="border-t border-gray-100 pt-4 flex justify-between items-center">
+                <div>
+                    <h4 class="font-medium text-gray-800">备份文件</h4>
+                    <p class="text-sm text-gray-500">创建所有文件和图片的备份</p>
+                </div>
+                <button class="px-3 py-1.5 border border-primary/30 text-primary rounded-lg hover:bg-primary/5 transition-custom text-sm">
+                    备份文件
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
