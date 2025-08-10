@@ -111,19 +111,7 @@ class Folder(BaseTable, table=True):
         description="完整路径（如/a/b/）"
     )
 
-def init_db():
-    """
-    初始化数据库
-    
-    功能：
-    1. 检测数据库文件是否存在
-    2. 创建SQLite数据库引擎
-    3. 创建所有表结构（如果不存在）
-    4. 初始化根收藏夹（仅当首次创建数据库时）
-    
-    返回：
-    - SQLAlchemy引擎对象
-    """
+def init_db(): # 初始化数据库
     db_exists = os.path.exists(Config.DB_PATH)
     
     # 创建SQLite数据库引擎
@@ -138,7 +126,7 @@ def init_db():
     if not db_exists:
         with Session(engine) as session:
             # 创建根收藏夹
-            root_folder = Folder(name="Root", parent_id=0, path="/")
+            root_folder = Folder(name="Root", parent_id=None, path="/") # 使用 None 而不是 0 作为外键，避免约束报错
             session.add(root_folder)
             session.commit()
             
@@ -586,6 +574,3 @@ if __name__ == "__main__":
     
     # 测试数据库操作
     test_database_operations(engine)
-    
-    # 关闭数据库连接
-    # db_manager.close()  # 如果使用了 DatabseManager 类
