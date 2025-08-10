@@ -1,13 +1,51 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import json
 import sqlite3
 from pathlib import Path
+import random # test data
 
 app = Flask(__name__)
 app.config['DATABASE'] = 'clipboard_history.db'
 app.config['UPLOAD_FOLDER'] = 'static/backups'
+
+def generate_test_records(count=500):
+    records = []
+    types = ['Text', 'Image', 'File']
+    sources = ['Chrome', 'Photoshop', 'Finder', 'Word', 'Excel', 'PowerPoint', 'Firefox', 'Safari', 'VS Code', 'Terminal']
+    
+    # 生成过去30天内的随机时间
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=30)
+    
+    for i in range(1, count + 1):
+        record_type = random.choice(types)
+        timestamp = start_date + timedelta(seconds=random.randint(0, 30*24*3600))
+        
+        record = {
+            'id': i,
+            'type': record_type,
+            'timestamp': timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            'source': random.choice(sources),
+            'is_favorite': random.choice([True, False]),
+            'content': None,
+            'file_name': None
+        }
+        
+        # 根据类型设置内容或文件名
+        if record_type == 'Text':
+            record['content'] = f"这是第{i}条文本记录，用于测试历史记录展示功能。这是一段示例文本内容，包含随机生成的信息。"
+        elif record_type == 'Image':
+            img_formats = ['png', 'jpg', 'jpeg', 'gif', 'svg']
+            record['file_name'] = f"image_{i}.{random.choice(img_formats)}"
+        elif record_type == 'File':
+            file_formats = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', 'txt']
+            record['file_name'] = f"document_{i}.{random.choice(file_formats)}"
+        
+        records.append(record)
+    
+    return records
 
 # 确保备份文件夹存在
 Path(app.config['UPLOAD_FOLDER']).mkdir(parents=True, exist_ok=True)
@@ -36,39 +74,54 @@ def index():
 
     """展示历史记录页面"""
     # 模拟数据（替换数据库查询）
-    records = [
-        {
-            'id': 1,
-            'type': 'Text',
-            'timestamp': '2023-05-15 14:30:22',
-            'source': 'Chrome',
-            'is_favorite': True,
-            'content': '这是一段示例文本内容，用于测试历史记录展示功能。',
-            'file_name': None
-        },
-        {
-            'id': 2,
-            'type': 'Image',
-            'timestamp': '2023-05-14 09:15:47',
-            'source': 'Photoshop',
-            'is_favorite': False,
-            'content': None,
-            'file_name': 'screenshot.png'
-        },
-        {
-            'id': 3,
-            'type': 'File',
-            'timestamp': '2023-05-13 16:20:33',
-            'source': 'Finder',
-            'is_favorite': False,
-            'content': None,
-            'file_name': 'document.pdf'
-        }
-    ]
+    # 生成500条测试数据
+    records = generate_test_records(100)
+    # print(records)
+    # 获取筛选参数
+    filter_type = request.args.get('type', 'all')
+    filter_source = request.args.get('source', 'all')
+    filter_time = request.args.get('time', 'all')
     
-    return render_template('index.html', 
-                          records=records, 
-                          active_page='history')
+    # 构建查询
+    query = 'SELECT * FROM clipboard_items WHERE 1=1'
+    params = []
+    
+    if filter_type != 'all':
+        query += ' AND type = ?'
+        params.append(filter_type.capitalize())
+    
+    if filter_source != 'all':
+        if filter_source == 'Nova11':
+            query += ' AND source = ?'
+            params.append('Nova11')
+        else:
+            query += ' AND source != ?'
+            params.append('Nova11')
+    
+    # 时间筛选逻辑
+    now = datetime.now()
+    if filter_time == 'today':
+        today_start = datetime(now.year, now.month, now.day)
+        query += ' AND timestamp >= ?'
+        params.append(today_start)
+    elif filter_time == 'week':
+        week_start = now - timedelta(days=now.weekday())
+        week_start = datetime(week_start.year, week_start.month, week_start.day)
+        query += ' AND timestamp >= ?'
+        params.append(week_start)
+    elif filter_time == 'month':
+        month_start = datetime(now.year, now.month, 1)
+        query += ' AND timestamp >= ?'
+        params.append(month_start)
+    
+    query += ' ORDER BY timestamp DESC'
+    
+    # # 执行查询
+    # db = get_db()
+    # records = db.execute(query, tuple(params)).fetchall()
+    # db.close()
+    
+    return render_template('index.html', records=records, active_page='history')
 
 @app.route('/favorites')
 def favorites():

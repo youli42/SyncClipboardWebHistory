@@ -4,6 +4,8 @@ watchdog
 # web 服务
 flask
 pygments
+flask-socketio # 用于实时更新
+eventlet # 用于支持 WebSocket
 
 # 数据库
 # Peewee

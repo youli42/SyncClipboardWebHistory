@@ -121,4 +121,22 @@
     </div>
     {% endif %}
 </div>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+    // 连接到 SocketIO 服务
+    const socket = io();
+
+    // 监听 history_update 事件
+    socket.on('history_update', function() {
+        // 这里用 AJAX 刷新历史记录区域
+        fetch('/history')
+            .then(res => res.json())
+            .then(data => {
+                // 你需要根据 data 更新页面内容
+                // 例如用 innerHTML 或前端框架渲染
+                // 示例：document.getElementById('history-list').innerHTML = ...
+                location.reload(); // 简单做法：直接刷新页面
+            });
+    });
+</script>
 {% endblock %}

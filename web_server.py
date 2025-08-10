@@ -1,8 +1,12 @@
+import eventlet
+eventlet.monkey_patch()
 from flask import Flask, render_template, request, jsonify, send_from_directory, g
-from database import DatabaseManager
+from flask_socketio import SocketIO
 from config import Config
+from database import DatabaseManager
 
 app = Flask(__name__, template_folder=Config.TEMPLATES_DIR, static_folder=Config.STATIC_DIR)
+socketio = SocketIO(app, async_mode='eventlet')  # 新增
 
 def get_db():
     if 'db' not in g:
@@ -105,6 +109,11 @@ def remove_from_collection():
     return jsonify({'status': 'success'})
 
 
+# 提供一个通知接口，供监控服务调用
+def notify_history_update():
+    socketio.emit('history_update')  # 向所有客户端推送事件
+
+
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+    socketio.run(app, port=5000, debug=True)  # 用 socketio.run 启动
 
