@@ -112,8 +112,21 @@ class Folder(BaseTable, table=True):
     )
 
 def init_db(): # 初始化数据库
-    db_exists = os.path.exists(Config.DB_PATH)
+    # 确保数据库目录存在
+    db_dir = os.path.dirname(Config.DB_PATH) # 获取父目录
+    if not os.path.exists(db_dir):
+        os.makedirs(db_dir, exist_ok=True)  # 递归创建目录
+        print(f"Created database directory: {db_dir}")
     
+    # 确保备份目录存在
+    bkp_dir =Config.BACKUP_DIR
+    if not os.path.exists(bkp_dir):
+        os.makedirs(bkp_dir, exist_ok=True)  # 递归创建目录
+        print(f"Created database directory: {bkp_dir}")
+
+
+    db_exists = os.path.exists(Config.DB_PATH)
+
     # 创建SQLite数据库引擎
     # echo=True 参数启用SQL日志（生产环境应设为False）
     sqlite_url = f"sqlite:///{Config.DB_PATH}"  # 数据库连接地址

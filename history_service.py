@@ -138,7 +138,8 @@ def parse_size(size_str):
         'B': 1,
         'KB': 1024,
         'MB': 1024 **2,
-        'GB': 1024** 3
+        'GB': 1024** 3,
+        'G': 1024** 3
     }
     
     return int(size * units[unit])
