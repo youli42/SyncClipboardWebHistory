@@ -1,37 +1,50 @@
 import eventlet
-eventlet.monkey_patch()
+# eventlet.monkey_patch()
 from flask import Flask, render_template, request, jsonify, send_from_directory, g
 from flask_socketio import SocketIO
 from config import Config
-from database import DatabaseManager
+from database import ServerGet, ServerSet
 
 app = Flask(__name__, template_folder=Config.TEMPLATES_DIR, static_folder=Config.STATIC_DIR)
 socketio = SocketIO(app, async_mode='eventlet')  # 新增
 
 def get_db():
     if 'db' not in g:
-        g.db = DatabaseManager()
+        g.db = ServerGet()  # 用ServerGet
     return g.db
 
-@app.teardown_appcontext
+@app.teardown_appcontext # 每次请求结束都运行这个函数
 def close_db(exception):
-    db = g.pop('db', None)
-    if db is not None:
-        db.close()
+    return 0
 
 @app.route('/')
 def index():
-    # 获取基本的历史记录
-    page = int(request.args.get('page', 1))
-    per_page = 30
-    offset = (page - 1) * per_page
+    """展示历史记录页面"""
+    # 从数据库获取历史记录
+    # db = get_db()
+    # records = db.execute('SELECT * FROM clipboard_items ORDER BY timestamp DESC').fetchall()
+    # db.close()
+
+    """展示历史记录页面"""
+    # 模拟数据（替换数据库查询）
+    # 生成500条测试数据
+    records = get_db().get_history(limit=500)  # 获取最新500条记录
+    # print(records)
+    # 获取筛选参数
+    filter_type = request.args.get('type', 'all')
+    filter_source = request.args.get('source', 'all')
+    filter_time = request.args.get('time', 'all')
     
-    history = get_db().get_history(limit=per_page, offset=offset)
-    return render_template('index.html', history=history, page=page)
+    
+    # # 执行查询
+    # db = get_db()
+    # records = db.execute(query, tuple(params)).fetchall()
+    # db.close()
+    
+    return render_template('index.html', records=records, active_page='history')
 
 @app.route('/history')
-def get_history():
-    # 带筛选的历史记录
+def history_api():
     filters = {
         'type': request.args.get('type', ''),
         'source': request.args.get('source', ''),
@@ -39,9 +52,16 @@ def get_history():
         'end_date': request.args.get('end_date', ''),
         'starred': request.args.get('starred', '') == 'true'
     }
+    records = get_db().get_history(filters=filters)
+    return jsonify(records)
+
+@app.route('/favorites')
+def favorites():
+    """展示收藏页面"""
     
-    history = get_db().get_history(filters=filters)
-    return jsonify(history)
+    return render_template('favorites.html', 
+                          records=records, 
+                          active_page='favorites')
 
 @app.route('/star/<int:item_id>', methods=['POST'])
 def toggle_star(item_id):

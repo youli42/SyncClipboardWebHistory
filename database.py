@@ -234,6 +234,39 @@ def add_history_item_from_json(data: dict, engine=None):
         session.commit()
         return history.id
 
+class ServerGet:
+    def __init__(self):
+        self.engine = create_engine(f"sqlite:///{Config.DB_PATH}", echo=False)
+
+    def get_history(self, limit=30, offset=0, filters=None):
+        with Session(self.engine) as session:
+            query = select(ClipboardHistory).order_by(ClipboardHistory.timestamp.desc())
+            # 可根据 filters 添加筛选条件
+            if filters:
+                if filters.get('type'):
+                    query = query.where(ClipboardHistory.type == filters['type'])
+                if filters.get('source'):
+                    query = query.where(ClipboardHistory.from_equipment == filters['source'])
+                # 你可以继续扩展更多筛选条件
+            results = session.exec(query.offset(offset).limit(limit)).all()
+            # 转为 dict 方便模板渲染
+            history = []
+            for item in results:
+                history.append({
+                    'id': item.id,
+                    'type': item.type,
+                    'timestamp': item.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                    'source': item.from_equipment,
+                    'is_favorite': False,  # 你可以根据收藏表判断
+                    'content': item.clipboard if item.type == 'Text' else None,
+                    'file_name': None,     # 你可以根据 raw_content 或 backup_file 表获取
+                })
+            return history
+
+class ServerSet:
+    def __init__(self):
+        return 0
+
 def print_all_tables(engine):
     """输出所有表的内容"""
     with Session(engine) as session:

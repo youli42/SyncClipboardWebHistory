@@ -1,64 +1,155 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SyncClipboard 历史记录</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-    <div class="container">
-        <h1>剪贴板历史记录</h1>
-        
-        <!-- 搜索和筛选区 -->
-        <div class="filters">
-            <input type="text" id="search" placeholder="搜索内容">
-            <select id="type-filter">
-                <option value="">所有类型</option>
-                <option value="Text">文本</option>
-                <option value="Image">图片</option>
-                <option value="File">文件</option>
-            </select>
-            <input type="date" id="start-date">
-            <input type="date" id="end-date">
-            <button id="apply-filter">应用筛选</button>
-            <button id="toggle-starred">显示收藏</button>
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-6">
+    <h2 class="text-xl font-bold mb-4">剪贴板历史记录</h2>
+
+    <!-- 筛选器 -->
+    <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div class="flex flex-wrap gap-2 mb-3">
+            <span class="text-sm text-gray-500">类型筛选:</span>
+            <button
+                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">全部</button>
+            <button
+                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">文本</button>
+            <button
+                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">图片</button>
+            <button
+                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">文件</button>
         </div>
-        
-        <!-- 历史记录列表 -->
-        <div class="history-list">
-            {% for item in history %}
-            <div class="history-item" data-id="{{ item.id }}">
-                <div class="header">
-                    <span class="timestamp">{{ item.timestamp }}</span>
-                    <span class="type">{{ item.type }}</span>
-                    {% if item.from_source %}
-                    <span class="source">来源: {{ item.from_source }}</span>
-                    {% endif %}
-                    <span class="star {% if item.is_starred %}starred{% endif %}">★</span>
+
+        <div class="flex flex-wrap gap-2 mb-3">
+            <span class="text-sm text-gray-500">来源筛选:</span>
+            <button
+                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">全部</button>
+            <button
+                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">Nova11</button>
+            <button
+                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">其他设备</button>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+            <span class="text-sm text-gray-500">时间筛选:</span>
+            <button
+                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">全部时间</button>
+            <button
+                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">今天</button>
+            <button
+                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">本周</button>
+            <button
+                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">本月</button>
+        </div>
+    </div>
+
+    <!-- 历史记录列表 -->
+    {% if records %}
+    <div class="space-y-4">
+        {% for record in records %}
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden card-hover">
+            <div class="p-4">
+                <!-- 元数据信息 -->
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex items-center space-x-3">
+                        <!-- 类型图标 -->
+                        <span class="p-2 rounded-full 
+                            {% if record['type'] == 'Text' %}bg-blue-100 text-blue-600{% endif %}
+                            {% if record['type'] == 'Image' %}bg-green-100 text-green-600{% endif %}
+                            {% if record['type'] == 'File' %}bg-purple-100 text-purple-600{% endif %}">
+                            <i class="{% if record['type'] == 'Text' %}fa-file-text-o{% endif %}
+                                     {% if record['type'] == 'Image' %}fa-picture-o{% endif %}
+                                     {% if record['type'] == 'File' %}fa-file-archive-o{% endif %}"></i>
+                        </span>
+
+                        <div>
+                            <div class="text-sm text-gray-500">
+                                {{ record['timestamp'] }}
+                                {% if record['source'] %}
+                                <span class="ml-2 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">{{
+                                    record['source'] }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="text-sm font-medium text-gray-700 capitalize">{{ record['type'] }} 内容</div>
+                        </div>
+                    </div>
+
+                    <div class="flex space-x-2">
+                        <!-- 下载按钮 (仅文件和图片) -->
+                        {% if record['type'] in ['File', 'Image'] and record['file_name'] %}
+                        <a href="{{ url_for('download_file', item_id=record['id']) }}"
+                            class="p-2 text-gray-500 hover:text-primary transition-custom" title="下载">
+                            <i class="fa fa-download"></i>
+                        </a>
+                        {% endif %}
+
+                        <!-- 收藏按钮 -->
+                        <a href="{{ url_for('toggle_favorite', item_id=record['id']) }}"
+                            class="favorite-btn p-2 text-gray-500 hover:text-yellow-400 transition-custom"
+                            title="{% if record['is_favorite'] %}取消收藏{% else %}收藏{% endif %}">
+                            <i
+                                class="{% if record['is_favorite'] %}fa-star text-yellow-400{% else %}fa-star-o{% endif %}"></i>
+                        </a>
+                    </div>
                 </div>
-                <div class="content">
-                    {% if item.type == "Text" %}
-                    <pre>{{ item.content }}</pre>
-                    {% elif item.type == "Image" %}
-                    <img src="{{ url_for('download_file', filename=item.file_path.split('/')[-1]) }}" alt="图片" width="100">
-                    {% else %}
-                    <a href="{{ url_for('download_file', filename=item.file_path.split('/')[-1]) }}" 
-                       download="{{ item.content }}">下载文件</a>
+
+                <!-- 内容预览 -->
+                <div class="mt-2">
+                    {% if record['type'] == 'Text' %}
+                    <div class="text-gray-800 break-words">
+                        {{ record['content']|truncate(200) }}
+                    </div>
+
+                    {% elif record['type'] == 'Image' %}
+                    <div class="flex items-center">
+                        <div
+                            class="w-24 h-24 bg-gray-100 rounded flex items-center justify-center overflow-hidden mr-3">
+                            <i class="fa fa-picture-o text-gray-400 text-3xl"></i>
+                            <!-- 实际应用中应显示图片缩略图 -->
+                            <!-- <img src="{{ url_for('static', filename='backups/' + record['file_name']) }}" alt="图片预览" class="w-full h-full object-cover"> -->
+                        </div>
+                        <div class="text-gray-700">
+                            图片文件: {{ record['file_name'] or '未命名图片' }}
+                        </div>
+                    </div>
+
+                    {% elif record['type'] == 'File' %}
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center mr-3">
+                            <i class="fa fa-file-archive-o text-gray-600"></i>
+                        </div>
+                        <div class="text-gray-700">
+                            文件: {{ record['file_name'] or '未命名文件' }}
+                        </div>
+                    </div>
                     {% endif %}
                 </div>
             </div>
-            {% endfor %}
         </div>
-        
-        <!-- 分页 -->
-        <div class="pagination">
-            <a href="{{ url_for('index', page=page-1) if page > 1 else '#' }}">上一页</a>
-            <span>第 {{ page }} 页</span>
-            <a href="{{ url_for('index', page=page+1) }}">下一页</a>
-        </div>
+        {% endfor %}
     </div>
-    
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-</body>
-</html>
+    {% else %}
+    <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+        <i class="fa fa-clipboard text-gray-300 text-5xl mb-4"></i>
+        <h3 class="text-lg font-medium text-gray-700 mb-2">暂无剪贴板历史记录</h3>
+        <p class="text-gray-500">使用SyncClipboard复制内容后，这里将显示历史记录</p>
+    </div>
+    {% endif %}
+</div>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+    // 连接到 SocketIO 服务
+    const socket = io();
+
+    // 监听 history_update 事件
+    socket.on('history_update', function () {
+        // 这里用 AJAX 刷新历史记录区域
+        fetch('/history')
+            .then(res => res.json())
+            .then(data => {
+                // 你需要根据 data 更新页面内容
+                // 例如用 innerHTML 或前端框架渲染
+                // 示例：document.getElementById('history-list').innerHTML = ...
+                location.reload(); // 简单做法：直接刷新页面
+            });
+    });
+</script>
+{% endblock %}

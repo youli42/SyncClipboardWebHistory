@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-6">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">收藏的内容</h2>
+        <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-custom flex items-center">
+            <i class="fa fa-folder-open-o mr-2"></i>管理收藏夹
+        </button>
+    </div>
+    
+    <!-- 收藏夹导航 -->
+    <div class="bg-white rounded-lg shadow-sm p-3 mb-6 overflow-x-auto">
+        <div class="flex space-x-2 min-w-max">
+            <button class="px-4 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium">全部收藏</button>
+            <button class="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 text-sm">工作</button>
+            <button class="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 text-sm">个人</button>
+            <button class="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 text-sm">代码片段</button>
+            <button class="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 text-sm flex items-center">
+                <i class="fa fa-plus mr-1"></i> 新建
+            </button>
+        </div>
+    </div>
+    
+    <!-- 收藏列表 -->
+    {% if records %}
+    <div class="space-y-4">
+        {% for record in records %}
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden card-hover">
+            <div class="p-4">
+                <!-- 元数据信息 -->
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex items-center space-x-3">
+                        <!-- 类型图标 -->
+                        <span class="p-2 rounded-full 
+                            {% if record['type'] == 'Text' %}bg-blue-100 text-blue-600{% endif %}
+                            {% if record['type'] == 'Image' %}bg-green-100 text-green-600{% endif %}
+                            {% if record['type'] == 'File' %}bg-purple-100 text-purple-600{% endif %}">
+                            <i class="{% if record['type'] == 'Text' %}fa-file-text-o{% endif %}
+                                     {% if record['type'] == 'Image' %}fa-picture-o{% endif %}
+                                     {% if record['type'] == 'File' %}fa-file-archive-o{% endif %}"></i>
+                        </span>
+                        
+                        <div>
+                            <div class="text-sm text-gray-500">
+                                {{ record['timestamp'] }}
+                                {% if record['source'] %}
+                                <span class="ml-2 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">{{ record['source'] }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="text-sm font-medium text-gray-700 capitalize">{{ record['type'] }} 内容</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-2">
+                        <!-- 下载按钮 (仅文件和图片) -->
+                        {% if record['type'] in ['File', 'Image'] and record['file_name'] %}
+                        <a href="{{ url_for('download_file', item_id=record['id']) }}" 
+                           class="p-2 text-gray-500 hover:text-primary transition-custom"
+                           title="下载">
+                            <i class="fa fa-download"></i>
+                        </a>
+                        {% endif %}
+                        
+                        <!-- 收藏按钮 -->
+                        <a href="{{ url_for('toggle_favorite', item_id=record['id']) }}" 
+                           class="favorite-btn p-2 text-yellow-400 hover:text-gray-500 transition-custom"
+                           title="取消收藏">
+                            <i class="fa fa-star"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- 内容预览 -->
+                <div class="mt-2">
+                    {% if record['type'] == 'Text' %}
+                    <div class="text-gray-800 break-words">
+                        {{ record['content']|truncate(200) }}
+                    </div>
+                    
+                    {% elif record['type'] == 'Image' %}
+                    <div class="flex items-center">
+                        <div class="w-24 h-24 bg-gray-100 rounded flex items-center justify-center overflow-hidden mr-3">
+                            <i class="fa fa-picture-o text-gray-400 text-3xl"></i>
+                            <!-- 实际应用中应显示图片缩略图 -->
+                            <!-- <img src="{{ url_for('static', filename='backups/' + record['file_name']) }}" alt="图片预览" class="w-full h-full object-cover"> -->
+                        </div>
+                        <div class="text-gray-700">
+                            图片文件: {{ record['file_name'] or '未命名图片' }}
+                        </div>
+                    </div>
+                    
+                    {% elif record['type'] == 'File' %}
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center mr-3">
+                            <i class="fa fa-file-archive-o text-gray-600"></i>
+                        </div>
+                        <div class="text-gray-700">
+                            文件: {{ record['file_name'] or '未命名文件' }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+        <i class="fa fa-star-o text-gray-300 text-5xl mb-4"></i>
+        <h3 class="text-lg font-medium text-gray-700 mb-2">暂无收藏内容</h3>
+        <p class="text-gray-500">在历史记录中点击星标图标可将内容添加到收藏</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

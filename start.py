@@ -27,10 +27,10 @@ def signal_handler(sig, frame):
     print("\n接收到退出信号，正在优雅关闭服务...")
     exit_event.set()  # 设置退出标志
     
-    # 等待服务关闭（最多5秒）
+    # 等待服务关闭（最多1秒）
     print("等待服务线程结束...")
     monitor_thread.join(timeout=5.0)
-    web_thread.join(timeout=5.0)
+    web_thread.join(timeout=1.0)
     
     # 强制退出（如果线程未正常结束）
     if monitor_thread.is_alive() or web_thread.is_alive():
