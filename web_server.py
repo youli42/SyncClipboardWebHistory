@@ -1,6 +1,6 @@
 import eventlet
 # eventlet.monkey_patch()
-from flask import Flask, render_template, request, jsonify, send_from_directory, g
+from flask import Flask, render_template, request, jsonify, send_from_directory, g, send_file
 from flask_socketio import SocketIO
 from config import Config
 from database import ServerGet, ServerSet
@@ -8,40 +8,61 @@ from database import ServerGet, ServerSet
 app = Flask(__name__, template_folder=Config.TEMPLATES_DIR, static_folder=Config.STATIC_DIR)
 socketio = SocketIO(app, async_mode='eventlet')  # 新增
 
-def get_db():
-    if 'db' not in g:
-        g.db = ServerGet()  # 用ServerGet
-    return g.db
+# 创建 ServerGet 实例
+history_db = ServerGet()
+
+def set_db():
+    if 'sdb' not in g:
+        g.sdb = ServerSet()  # 用ServerSet
+    return g.sdb
 
 @app.teardown_appcontext # 每次请求结束都运行这个函数
 def close_db(exception):
     return 0
 
+# 主页仅渲染模板，数据通过API加载
 @app.route('/')
+# @app.route('/history')
 def index():
-    """展示历史记录页面"""
-    # 从数据库获取历史记录
-    # db = get_db()
-    # records = db.execute('SELECT * FROM clipboard_items ORDER BY timestamp DESC').fetchall()
-    # db.close()
+    return render_template('index.html', active_page='history')
 
-    """展示历史记录页面"""
-    # 模拟数据（替换数据库查询）
-    # 生成500条测试数据
-    records = get_db().get_history(limit=500)  # 获取最新500条记录
-    # print(records)
-    # 获取筛选参数
-    filter_type = request.args.get('type', 'all')
-    filter_source = request.args.get('source', 'all')
-    filter_time = request.args.get('time', 'all')
+# 主页列表专用分页API
+@app.route('/api/history')
+def api_history_paginated():
+    try:
+        # 解析分页参数
+        limit = int(request.args.get('limit', 30))
+        offset = int(request.args.get('offset', 0))
+        # 限制参数范围
+        limit = max(1, min(limit, 100))
+        offset = max(0, offset)
+        
+        # 使用实例调用方法
+        result = history_db.get_history_paginated(limit=limit, offset=offset)
+
+        print("::DEBUG::", "API /api/history called with limit:", limit, "offset:", offset)
+        
+        return jsonify({'success': True, 'data': result})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# 添加下载文件的API
+@app.route('/api/download')
+def download_file():
+    checksum = request.args.get('checksum')
+    if not checksum:
+        return "缺少参数", 400
     
-    
-    # # 执行查询
-    # db = get_db()
-    # records = db.execute(query, tuple(params)).fetchall()
-    # db.close()
-    
-    return render_template('index.html', records=records, active_page='history')
+    # 查询备份文件表
+    with Session(engine) as session:
+        backup = session.exec(select(BackupFile).where(BackupFile.checksum == checksum)).first()
+        if not backup:
+            return "文件不存在", 404
+        
+        # 发送文件
+        return send_file(backup.filepath, as_attachment=True)
+
+##############################################################################
 
 @app.route('/history')
 def history_api():
@@ -52,7 +73,7 @@ def history_api():
         'end_date': request.args.get('end_date', ''),
         'starred': request.args.get('starred', '') == 'true'
     }
-    records = get_db().get_history(filters=filters)
+    records = history_db.get_history(filters=filters)
     return jsonify(records)
 
 @app.route('/favorites')
@@ -68,9 +89,9 @@ def toggle_star(item_id):
     new_status = get_db().toggle_star(item_id)
     return jsonify({'starred': new_status})
 
-@app.route('/download/<path:filename>')
-def download_file(filename):
-    return send_from_directory(Config.BACKUP_DIR, filename, as_attachment=True)
+# @app.route('/download/<path:filename>')
+# def download_file(filename):
+#     return send_from_directory(Config.BACKUP_DIR, filename, as_attachment=True)
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():

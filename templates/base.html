@@ -37,6 +37,16 @@
             }
             /* .card-hover utility removed due to @apply incompatibility with CDN Tailwind */
         }
+        @layer utilities {
+            .text-wrap {
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+            .toggle-text {
+                cursor: pointer;
+                padding: 0 4px;
+            }
+        }
     </style>
 </head>
 
@@ -99,7 +109,7 @@
         <!-- 页脚 -->
         <footer class="bg-white border-t border-gray-200 py-4">
             <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
-                <p>SyncClipboard 历史记录查看器 &copy; {{ now.year }}</p>
+                <p>SyncClipboard 历史记录查看器 &copy;</p>
             </div>
         </footer>
     </div>

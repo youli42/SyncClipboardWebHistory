@@ -6,150 +6,368 @@
 
     <!-- 筛选器 -->
     <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
-        <div class="flex flex-wrap gap-2 mb-3">
-            <span class="text-sm text-gray-500">类型筛选:</span>
-            <button
-                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">全部</button>
-            <button
-                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">文本</button>
-            <button
-                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">图片</button>
-            <button
-                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">文件</button>
-        </div>
-
-        <div class="flex flex-wrap gap-2 mb-3">
-            <span class="text-sm text-gray-500">来源筛选:</span>
-            <button
-                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">全部</button>
-            <button
-                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">Nova11</button>
-            <button
-                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">其他设备</button>
-        </div>
-
+        <!-- 筛选按钮组 -->
         <div class="flex flex-wrap gap-2">
-            <span class="text-sm text-gray-500">时间筛选:</span>
-            <button
-                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">全部时间</button>
-            <button
-                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">今天</button>
-            <button
-                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">本周</button>
-            <button
-                class="filter-toggle px-3 py-1 rounded-full text-sm border border-gray-200 hover:border-primary">本月</button>
+            <button class="filter-toggle px-3 py-1 rounded-full text-sm hover:bg-gray-100">全部类型</button>
+            <button class="filter-toggle px-3 py-1 rounded-full text-sm hover:bg-gray-100">文本</button>
+            <button class="filter-toggle px-3 py-1 rounded-full text-sm hover:bg-gray-100">图片</button>
+            <button class="filter-toggle px-3 py-1 rounded-full text-sm hover:bg-gray-100">文件</button>
         </div>
     </div>
 
-    <!-- 历史记录列表 -->
-    {% if records %}
-    <div class="space-y-4">
-        {% for record in records %}
-        <div class="bg-white rounded-lg shadow-sm overflow-hidden card-hover">
-            <div class="p-4">
-                <!-- 元数据信息 -->
-                <div class="flex justify-between items-start mb-3">
-                    <div class="flex items-center space-x-3">
-                        <!-- 类型图标 -->
-                        <span class="p-2 rounded-full 
-                            {% if record['type'] == 'Text' %}bg-blue-100 text-blue-600{% endif %}
-                            {% if record['type'] == 'Image' %}bg-green-100 text-green-600{% endif %}
-                            {% if record['type'] == 'File' %}bg-purple-100 text-purple-600{% endif %}">
-                            <i class="{% if record['type'] == 'Text' %}fa-file-text-o{% endif %}
-                                     {% if record['type'] == 'Image' %}fa-picture-o{% endif %}
-                                     {% if record['type'] == 'File' %}fa-file-archive-o{% endif %}"></i>
-                        </span>
-
-                        <div>
-                            <div class="text-sm text-gray-500">
-                                {{ record['timestamp'] }}
-                                {% if record['source'] %}
-                                <span class="ml-2 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">{{
-                                    record['source'] }}</span>
-                                {% endif %}
-                            </div>
-                            <div class="text-sm font-medium text-gray-700 capitalize">{{ record['type'] }} 内容</div>
-                        </div>
-                    </div>
-
-                    <div class="flex space-x-2">
-                        <!-- 下载按钮 (仅文件和图片) -->
-                        {% if record['type'] in ['File', 'Image'] and record['file_name'] %}
-                        <a href="{{ url_for('download_file', item_id=record['id']) }}"
-                            class="p-2 text-gray-500 hover:text-primary transition-custom" title="下载">
-                            <i class="fa fa-download"></i>
-                        </a>
-                        {% endif %}
-
-                        <!-- 收藏按钮 -->
-                        <a href="{{ url_for('toggle_favorite', item_id=record['id']) }}"
-                            class="favorite-btn p-2 text-gray-500 hover:text-yellow-400 transition-custom"
-                            title="{% if record['is_favorite'] %}取消收藏{% else %}收藏{% endif %}">
-                            <i
-                                class="{% if record['is_favorite'] %}fa-star text-yellow-400{% else %}fa-star-o{% endif %}"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- 内容预览 -->
-                <div class="mt-2">
-                    {% if record['type'] == 'Text' %}
-                    <div class="text-gray-800 break-words">
-                        {{ record['content']|truncate(200) }}
-                    </div>
-
-                    {% elif record['type'] == 'Image' %}
-                    <div class="flex items-center">
-                        <div
-                            class="w-24 h-24 bg-gray-100 rounded flex items-center justify-center overflow-hidden mr-3">
-                            <i class="fa fa-picture-o text-gray-400 text-3xl"></i>
-                            <!-- 实际应用中应显示图片缩略图 -->
-                            <!-- <img src="{{ url_for('static', filename='backups/' + record['file_name']) }}" alt="图片预览" class="w-full h-full object-cover"> -->
-                        </div>
-                        <div class="text-gray-700">
-                            图片文件: {{ record['file_name'] or '未命名图片' }}
-                        </div>
-                    </div>
-
-                    {% elif record['type'] == 'File' %}
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center mr-3">
-                            <i class="fa fa-file-archive-o text-gray-600"></i>
-                        </div>
-                        <div class="text-gray-700">
-                            文件: {{ record['file_name'] or '未命名文件' }}
-                        </div>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
+    <!-- 历史记录列表容器 -->
+    <div id="history-list" class="space-y-4">
+        <!-- 加载提示 -->
+        <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+            <i class="fa fa-spinner fa-spin text-primary text-3xl mb-4"></i>
+            <p class="text-gray-500">加载历史记录中...</p>
         </div>
-        {% endfor %}
     </div>
-    {% else %}
-    <div class="bg-white rounded-lg shadow-sm p-8 text-center">
-        <i class="fa fa-clipboard text-gray-300 text-5xl mb-4"></i>
-        <h3 class="text-lg font-medium text-gray-700 mb-2">暂无剪贴板历史记录</h3>
-        <p class="text-gray-500">使用SyncClipboard复制内容后，这里将显示历史记录</p>
+
+    <!-- 分页控件 -->
+    <div id="pagination" class="mt-6 flex justify-center items-center gap-2 hidden">
+        <button id="prev-page" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">
+            <i class="fa fa-chevron-left mr-1"></i> 上一页
+        </button>
+        <span class="text-gray-600">
+            第 <span id="current-page">1</span> 页 / 共 <span id="total-pages">0</span> 页
+        </span>
+        <button id="next-page" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">
+            下一页 <i class="fa fa-chevron-right ml-1"></i>
+        </button>
     </div>
-    {% endif %}
 </div>
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-<script>
-    // 连接到 SocketIO 服务
-    const socket = io();
 
-    // 监听 history_update 事件
-    socket.on('history_update', function () {
-        // 这里用 AJAX 刷新历史记录区域
-        fetch('/history')
+<!-- 图片预览模态框 -->
+<div id="image-modal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center">
+    <div class="bg-white p-4 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        <div class="flex justify-between items-center mb-2">
+            <h3 id="modal-title" class="font-medium"></h3>
+            <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                <i class="fa fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="flex justify-center items-center h-[calc(90vh-60px)]">
+            <img id="modal-image" src="" alt="图片预览" class="max-w-full max-h-full object-contain">
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const PAGE_SIZE = 30;
+    let currentOffset = 0;
+    let totalRecords = 0;
+
+    // 页面加载后初始化
+    document.addEventListener('DOMContentLoaded', () => {
+        loadHistory();
+        initPaginationEvents();
+        initModalEvents();
+    });
+
+    // 初始化模态框事件
+    function initModalEvents() {
+        const modal = document.getElementById('image-modal');
+        const closeBtn = document.getElementById('close-modal');
+
+        // 点击关闭按钮关闭模态框
+        closeBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        });
+
+        // 点击模态框外部关闭
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        });
+    }
+
+    // 加载历史记录
+    function loadHistory() {
+        const container = document.getElementById('history-list');
+        container.innerHTML = `
+            <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                <i class="fa fa-spinner fa-spin text-primary text-3xl mb-4"></i>
+                <p class="text-gray-500">加载历史记录中...</p>
+            </div>
+        `; // 显示加载中
+
+        fetch(`/api/history?limit=${PAGE_SIZE}&offset=${currentOffset}`)
             .then(res => res.json())
             .then(data => {
-                // 你需要根据 data 更新页面内容
-                // 例如用 innerHTML 或前端框架渲染
-                // 示例：document.getElementById('history-list').innerHTML = ...
-                location.reload(); // 简单做法：直接刷新页面
+                if (data.success) {
+                    totalRecords = data.data.total;
+                    renderRecords(data.data.records);
+                    updatePaginationUI();
+                } else {
+                    container.innerHTML = `<div class="text-center text-red-500">加载失败: ${data.error}</div>`;
+                }
             });
-    });
+    }
+
+    // 渲染记录列表
+    function renderRecords(records) {
+        const container = document.getElementById('history-list');
+        if (records.length === 0) {
+            container.innerHTML = `
+                <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                    <p class="text-gray-500">暂无历史记录</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        records.forEach(record => {
+            // 根据类型生成不同的内容预览
+            let previewContent = '';
+            let actionButton = '';
+            let extraInfo = '';
+
+            if (record.type === 'Text') {
+                // 文本类型：显示内容预览和复制按钮
+                const maxLength = 100;
+                const content = record.content || '';
+                const isLongText = content.length > maxLength;
+                const preview = isLongText
+                    ? content.substring(0, maxLength) + '...'
+                    : content;
+
+                // 构建预览内容（带展开/折叠功能）
+                previewContent = `
+                    <div class="text-gray-700 text-wrap">
+                        <span class="${isLongText ? 'preview-text' : ''}">${escapeHtml(preview)}</span>
+                        ${isLongText ? `<span class="full-text hidden">${escapeHtml(content)}</span>` : ''}
+                    </div>
+                    ${isLongText ? `
+                        <button class="toggle-text text-sm text-blue-500 hover:text-blue-700 mt-1">
+                            展开
+                        </button>
+                    ` : ''}
+                `;
+
+                actionButton = `
+                    <button class="copy-btn text-blue-500 hover:text-blue-700" data-clipboard="${escapeHtml(content)}">
+                        <i class="fa fa-copy"></i> 复制
+                    </button>
+                `;
+            }
+            else if (record.type === 'Image') {
+                // 图片类型：显示缩略图和预览按钮
+                const fileName = record.file_name || '未知图片';
+
+                previewContent = `
+                    <div class="mt-1">
+                        <img src="/api/download?checksum=${record.checksum}" 
+                             alt="${escapeHtml(fileName)}" 
+                             class="max-h-32 max-w-full rounded border border-gray-200 cursor-pointer preview-img"
+                             data-filename="${escapeHtml(fileName)}"
+                             data-src="/api/download?checksum=${record.checksum}">
+                        <p class="text-sm text-gray-600 mt-1">${escapeHtml(fileName)}</p>
+                    </div>
+                `;
+
+                actionButton = `
+                    <a href="/api/download?checksum=${record.checksum}" class="text-blue-500 hover:text-blue-700" download>
+                        <i class="fa fa-download"></i> 下载
+                    </a>
+                `;
+            }
+            else if (record.type === 'File' || record.type === 'Group') {
+                // 文件类型：显示文件名和下载按钮
+                const fileName = record.file_name || '未知文件';
+
+                // 获取文件大小信息（这里假设后端会返回，如果没有可以去掉）
+                if (record.size) {
+                    extraInfo = `<div class="text-xs text-gray-400 mt-1">
+                        文件大小: ${formatFileSize(record.size)}
+                    </div>`;
+                }
+
+                previewContent = `
+                    <div class="text-gray-700 truncate">
+                        <i class="fa fa-file-o mr-1"></i> ${escapeHtml(fileName)}
+                    </div>
+                    ${extraInfo}
+                `;
+
+                actionButton = `
+                    <a href="/api/download?checksum=${record.checksum}" class="text-blue-500 hover:text-blue-700" download>
+                        <i class="fa fa-download"></i> 下载
+                    </a>
+                `;
+            }
+
+            // 来源和标签信息
+            let sourceInfo = '';
+            if (record.source) {
+                sourceInfo += `<span class="text-sm text-gray-500">来源: ${escapeHtml(record.source)}</span>`;
+            }
+            if (record.tag) {
+                if (sourceInfo) sourceInfo += ' | ';
+                sourceInfo += `<span class="text-sm text-gray-500">标签: ${escapeHtml(record.tag)}</span>`;
+            }
+
+            // 收藏图标
+            const favoriteClass = record.is_favorite ? 'text-yellow-500' : 'text-gray-300';
+            const favoriteAction = record.is_favorite ? 'unfavorite' : 'favorite';
+
+            // 构建记录卡片
+            html += `
+            <div class="bg-white rounded-lg shadow-sm p-3 mb-2 hover:shadow-md transition-custom">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center">
+                            <span class="text-sm font-medium text-gray-900">${record.type}</span>
+                            <span class="ml-2 text-xs text-gray-500">${record.timestamp}</span>
+                        </div>
+                        ${previewContent}
+                        <div class="mt-1">
+                            ${sourceInfo}
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button class="favorite-btn ${favoriteClass}" data-uuid="${record.uuid}" data-action="${favoriteAction}">
+                            <i class="fa fa-star"></i>
+                        </button>
+                        ${actionButton}
+                    </div>
+                </div>
+            </div>`;
+        });
+        container.innerHTML = html;
+
+        // 绑定复制按钮事件
+        document.querySelectorAll('.copy-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const text = this.getAttribute('data-clipboard');
+                navigator.clipboard.writeText(text).then(() => {
+                    // 显示复制成功提示
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="fa fa-check"></i> 已复制';
+                    this.classList.remove('text-blue-500');
+                    this.classList.add('text-green-500');
+
+                    setTimeout(() => {
+                        this.innerHTML = originalText;
+                        this.classList.remove('text-green-500');
+                        this.classList.add('text-blue-500');
+                    }, 2000);
+                }).catch(err => {
+                    console.error('复制失败:', err);
+                });
+            });
+        });
+
+        // 绑定文本展开/折叠事件（在渲染后立即绑定）
+        document.querySelectorAll('.toggle-text').forEach(button => {
+            button.addEventListener('click', function () {
+                const previewText = this.parentElement.querySelector('.preview-text');
+                const fullText = this.parentElement.querySelector('.full-text');
+
+                if (fullText.classList.contains('hidden')) {
+                    // 切换到显示完整文本
+                    previewText.classList.add('hidden');
+                    fullText.classList.remove('hidden');
+                    this.textContent = '收起';
+                } else {
+                    // 切换到显示预览文本
+                    previewText.classList.remove('hidden');
+                    fullText.classList.add('hidden');
+                    this.textContent = '展开';
+                }
+            });
+        });
+
+        // 绑定图片预览事件
+        document.querySelectorAll('.preview-img').forEach(img => {
+            img.addEventListener('click', function () {
+                const modal = document.getElementById('image-modal');
+                const modalImg = document.getElementById('modal-image');
+                const modalTitle = document.getElementById('modal-title');
+
+                modalImg.src = this.getAttribute('data-src');
+                modalTitle.textContent = this.getAttribute('data-filename');
+
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            });
+        });
+
+        // 绑定收藏按钮事件
+        document.querySelectorAll('.favorite-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const uuid = this.getAttribute('data-uuid');
+                const isFavorite = this.classList.contains('text-yellow-500');
+
+                // 这里应该调用后端API来更新收藏状态
+                // 为了演示，先做前端状态切换
+                if (isFavorite) {
+                    this.classList.remove('text-yellow-500');
+                    this.classList.add('text-gray-300');
+                } else {
+                    this.classList.remove('text-gray-300');
+                    this.classList.add('text-yellow-500');
+                }
+            });
+        });
+    }
+
+    // 格式化文件大小
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // 防止XSS攻击的HTML转义函数
+    function escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // 初始化分页事件
+    function initPaginationEvents() {
+        document.getElementById('prev-page').addEventListener('click', () => {
+            if (currentOffset > 0) {
+                currentOffset -= PAGE_SIZE;
+                loadHistory();
+                // 滚动到顶部
+                window.scrollTo(0, 0);
+            }
+        });
+        document.getElementById('next-page').addEventListener('click', () => {
+            if (currentOffset + PAGE_SIZE < totalRecords) {
+                currentOffset += PAGE_SIZE;
+                loadHistory();
+                // 滚动到顶部
+                window.scrollTo(0, 0);
+            }
+        });
+    }
+
+    // 更新分页控件状态
+    function updatePaginationUI() {
+        const totalPages = Math.ceil(totalRecords / PAGE_SIZE);
+        const currentPage = Math.floor(currentOffset / PAGE_SIZE) + 1;
+
+        document.getElementById('current-page').textContent = currentPage;
+        document.getElementById('total-pages').textContent = totalPages;
+        document.getElementById('prev-page').disabled = currentOffset === 0;
+        document.getElementById('next-page').disabled = currentOffset + PAGE_SIZE >= totalRecords;
+        document.getElementById('pagination').classList.remove('hidden');
+    }
 </script>
 {% endblock %}

@@ -1,6 +1,6 @@
 
 import os
-from sqlalchemy import DateTime, Text, delete
+from sqlalchemy import DateTime, Text, delete, func
 from sqlmodel import SQLModel, create_engine, Session, Field, Column, ForeignKey, select, UniqueConstraint
 from typing import Optional
 from datetime import datetime
@@ -238,30 +238,70 @@ class ServerGet:
     def __init__(self):
         self.engine = create_engine(f"sqlite:///{Config.DB_PATH}", echo=False)
 
-    def get_history(self, limit=30, offset=0, filters=None):
+    # 主页列表专用查询（仅按时间排序，无筛选）
+    def get_history_paginated(self, limit: int = 30, offset: int = 0) -> dict:
+        """仅按时间倒序返回指定偏移量和数量的记录，包含总条数"""
+        with Session(self.engine) as session:
+            # 基础查询：按时间倒序（最新在前）
+            base_query = select(ClipboardHistory).order_by(ClipboardHistory.timestamp.desc())
+            
+            # 获取总记录数
+            total_count = session.exec(select(func.count()).select_from(base_query.subquery())).first()
+            
+            # 获取分页数据
+            results = session.exec(base_query.offset(offset).limit(limit)).all()
+            
+            # 转换为前端可用格式
+            records = []
+            for item in results:
+                # 解析文件名（从原始JSON）
+                file_name = None
+                try:
+                    raw_data = json.loads(item.raw_content)
+                    file_name = raw_data.get("File", None)
+                except json.JSONDecodeError:
+                    pass
+                
+                # 检查是否为收藏
+                is_favorite = session.exec(
+                    select(Favorite).where(Favorite.history_uuid == item.uuid)
+                ).first() is not None
+                
+                records.append({ # for 循环中添加代码
+                    'id': item.id,
+                    'uuid': item.uuid,
+                    'type': item.type,
+                    'timestamp': item.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                    'source': item.from_equipment,
+                    'tag': item.tag,  # 添加标签信息
+                    'is_favorite': is_favorite,
+                    'content': item.clipboard if item.type == 'Text' else None,
+                    'file_name': file_name,
+                    'checksum': item.checksum
+                })
+            
+            return {
+                'records': records,
+                'total': total_count,
+                'limit': limit,
+                'offset': offset
+            }
+
+    # 原有 get_history 方法修改为筛选专用（其他查询功能）
+    def get_history_filtered(self, filters: dict = None, limit: int = 30, offset: int = 0) -> list:
+        """带筛选条件的查询（供其他功能使用）"""
         with Session(self.engine) as session:
             query = select(ClipboardHistory).order_by(ClipboardHistory.timestamp.desc())
-            # 可根据 filters 添加筛选条件
             if filters:
                 if filters.get('type'):
                     query = query.where(ClipboardHistory.type == filters['type'])
                 if filters.get('source'):
                     query = query.where(ClipboardHistory.from_equipment == filters['source'])
-                # 你可以继续扩展更多筛选条件
+                # 其他筛选条件...
             results = session.exec(query.offset(offset).limit(limit)).all()
-            # 转为 dict 方便模板渲染
-            history = []
-            for item in results:
-                history.append({
-                    'id': item.id,
-                    'type': item.type,
-                    'timestamp': item.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
-                    'source': item.from_equipment,
-                    'is_favorite': False,  # 你可以根据收藏表判断
-                    'content': item.clipboard if item.type == 'Text' else None,
-                    'file_name': None,     # 你可以根据 raw_content 或 backup_file 表获取
-                })
-            return history
+            # 数据转换逻辑（同 get_history_paginated）
+            # ...
+            return records
 
     # 根据 ID 获取历史记录
     def get_history_by_id(self, history_id: int):
