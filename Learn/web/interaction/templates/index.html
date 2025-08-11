@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>剪贴板历史查询</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        input[type="number"] {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px 0 0 5px;
+            font-size: 16px;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 5px;
+            background: #f8f9fa;
+            border: 1px solid #eaeaea;
+        }
+
+        .result-item {
+            margin-bottom: 15px;
+        }
+
+        .result-label {
+            font-weight: bold;
+            color: #2c3e50;
+            min-width: 120px;
+            display: inline-block;
+        }
+
+        .error {
+            color: #e74c3c;
+            padding: 10px;
+            background: #fdeded;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .success {
+            color: #27ae60;
+            padding: 10px;
+            background: #edf7ee;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>剪贴板历史记录查询</h1>
+
+        <div class="input-group">
+            <input type="number" id="historyId" placeholder="请输入记录ID" min="1">
+            <!-- 点击按钮后调用queryHistory() -->
+            <button onclick="queryHistory()">查询</button>
+        </div>
+
+        <div id="resultContainer">
+            <!-- 查询结果将在这里显示 -->
+        </div>
+    </div>
+
+    <script>
+        function queryHistory() {
+            // 通过document.getElementById('historyId').value获取输入框中的 ID
+            const historyId = document.getElementById('historyId').value;
+            const resultContainer = document.getElementById('resultContainer');
+
+            // 清空之前的结果
+            resultContainer.innerHTML = '';
+
+            if (!historyId) {
+                resultContainer.innerHTML = '<div class="error">请输入ID</div>';
+                return;
+            }
+
+            // 创建表单数据
+            const formData = new FormData();
+            formData.append('id', historyId); // 将ID以键值对形式存入
+
+            // 通过fetch API 向后端/query路径发送请求
+            fetch('/query', {
+                method: 'POST', // 使用POST方法（适合提交数据）
+                body: formData // 请求体携带FormData数据
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 显示查询结果
+                        const result = data.data;
+                        let html = `
+                        <div class="success">查询成功！</div>
+                        <div class="result">
+                            <div class="result-item"><span class="result-label">ID:</span> ${result.id}</div>
+                            <div class="result-item"><span class="result-label">UUID:</span> ${result.uuid}</div>
+                            <div class="result-item"><span class="result-label">类型:</span> ${result.type}</div>
+                            <div class="result-item"><span class="result-label">内容:</span> ${result.clipboard || 'N/A'}</div>
+                            <div class="result-item"><span class="result-label">来源设备:</span> ${result.from_equipment || '未知'}</div>
+                            <div class="result-item"><span class="result-label">标签:</span> ${result.tag || '无'}</div>
+                            <div class="result-item"><span class="result-label">时间:</span> ${new Date(result.timestamp).toLocaleString()}</div>
+                            <div class="result-item"><span class="result-label">校验和:</span> ${result.checksum || 'N/A'}</div>
+                            <div class="result-item"><span class="result-label">原始内容:</span> <pre>${result.raw_content}</pre></div>
+                        </div>
+                    `;
+                        resultContainer.innerHTML = html;
+                    } else {
+                        resultContainer.innerHTML = `<div class="error">${data.message}</div>`;
+                    }
+                })
+                .catch(error => {
+                    resultContainer.innerHTML = `<div class="error">请求失败: ${error.message}</div>`;
+                });
+        }
+    </script>
+</body>
+
+</html>
+
+<!-- 
+
+拆分文件示例：
+
+your_project/
+├── app.py                  # 后端Flask代码（原interactionWeb.py）
+├── templates/              # 存放HTML模板
+│   └── index.html          # 主页面HTML
+└── static/                 # 存放静态资源
+    ├── css/                # 样式文件
+    │   └── style.css       # 拆分后的CSS代码
+    └── js/                 # 脚本文件
+        └── script.js       # 拆分后的JavaScript代码
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>剪贴板历史查询</title>
+    // 引入外部CSS文件
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>剪贴板历史记录查询</h1>
+        
+        <div class="query-section">
+            <input type="number" id="historyId" placeholder="请输入历史记录ID">
+            <button onclick="queryHistory()">查询</button>
+        </div>
+        
+        <div class="result-container" id="resultContainer">
+            // 结果将通过JavaScript动态插入
+        </div>
+    </div>
+
+    // 引入外部JS文件（放在body末尾，确保DOM加载完成后执行）
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
+
+Flask 静态文件引用规则：
+    使用{{ url_for('static', filename='路径') }}生成静态文件的 URL，Flask 会自动映射到static目录。例如：
+        - CSS 路径：static/css/style.css → {{ url_for('static', filename='css/style.css') }}
+        - JS 路径：static/js/script.js → {{ url_for('static', filename='js/script.js') }}
+文件加载顺序：
+        - CSS 通常放在<head>中，确保页面渲染时样式已加载。
+        - JS 建议放在</body>标签前，避免脚本执行时 DOM 元素尚未加载（若需放在<head>中，需用DOMContentLoaded事件包裹代码）。
+
+-->

@@ -263,6 +263,28 @@ class ServerGet:
                 })
             return history
 
+    # 根据 ID 获取历史记录
+    def get_history_by_id(self, history_id: int):
+        with Session(self.engine) as session: # 通过 Session 类创建一个数据库会话（session），self.engine 是数据库引擎（已在类中初始化），用于建立与数据库的连接。with 语句确保会话使用完毕后自动关闭，释放资源。
+            # 使用 SQLModel 的 select 方法构建查询语句，指定查询 ClipboardHistory 模型（对应数据库表），并通过 where 条件筛选出 id 等于 history_id 的记录。
+            statement = select(ClipboardHistory).where(ClipboardHistory.id == history_id)
+            result = session.exec(statement).first() # 通过会话的 exec 方法执行查询语句，first() 方法获取查询结果中的第一条记录（因为 id 通常是唯一的，所以最多只有一条结果）。
+            
+            if result:
+                # 将结果转换为字典格式
+                return {
+                    'id': result.id,
+                    'uuid': result.uuid,
+                    'type': result.type,
+                    'clipboard': result.clipboard,
+                    'from_equipment': result.from_equipment,
+                    'tag': result.tag,
+                    'timestamp': result.timestamp.isoformat(),
+                    'checksum': result.checksum,
+                    'raw_content': result.raw_content
+                }
+            return None
+
 class ServerSet:
     def __init__(self):
         return 0
