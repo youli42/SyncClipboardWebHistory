@@ -23,7 +23,7 @@ class Config:
     STATIC_DIR = os.path.join(BASE_DIR, "static")
     
     # 历史文件删除配置
-    MAX_FOLDER_SIZE = "1G"  # 支持格式: "100MB", "2GB", "512KB", "1024B"
+    MAX_FOLDER_SIZE = "1G"  # 支持的单位: B, K, KB, M, MB, G, GB (不区分大小写)
     CHECK_INTERVAL = 60  # 检查间隔（秒）
     FOLDER_TO_MONITOR = os.path.join(BASE_DIR, BACKUP_DIR_FOLDER)  # 替换为要监控的文件夹路径，一般和备份文件夹相同
 

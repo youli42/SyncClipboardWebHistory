@@ -122,25 +122,35 @@ def main():
 def parse_size(size_str):
     """
     将带单位的大小字符串转换为字节数
-    支持的单位: B, KB, MB, GB (不区分大小写)
-    示例: "1GB" -> 1073741824, "500MB" -> 524288000
+    支持的单位: B, K, KB, M, MB, G, GB (不区分大小写)
+    示例: "1G" -> 1073741824, "500M" -> 524288000
     """
-    # 正则表达式匹配数字和单位
-    match = re.match(r'^(\d+(\.\d+)?)\s*([BKMG]B?)$', size_str.strip(), re.IGNORECASE)
+    # 去除空白并尝试匹配
+    cleaned_str = size_str.strip()
+    match = re.match(r'^(\d+(?:\.\d+)?)\s*([BKMG]B?|B)$', cleaned_str, re.IGNORECASE)
+    
     if not match:
-        raise ValueError(f"无效的大小格式: {size_str}。请使用类似 '1GB', '500MB' 的格式")
+        raise ValueError(f"无效的大小格式: '{size_str}'。请使用类似 '1G', '500M' 的格式")
     
     size = float(match.group(1))
-    unit = match.group(3).upper()
+    unit = match.group(2).upper()
+    
+    # 标准化单位表示
+    unit = unit.replace('B', '')  # 移除所有B字符
+    if not unit:  # 如果是纯B，则保留为B
+        unit = 'B'
     
     # 单位转换为字节
     units = {
         'B': 1,
-        'KB': 1024,
-        'MB': 1024 **2,
-        'GB': 1024** 3,
-        'G': 1024** 3
+        'K': 1024,
+        'M': 1024 ** 2,
+        'G': 1024 ** 3
     }
+    
+    if unit not in units:
+        supported_units = ", ".join(units.keys())
+        raise ValueError(f"不支持的单位: '{unit}'。请使用 {supported_units}")
     
     return int(size * units[unit])
 
