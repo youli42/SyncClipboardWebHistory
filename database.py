@@ -303,6 +303,15 @@ class ServerGet:
             # ...
             return records
 
+    # 下载接口，根据checksum获取文件路径
+    def get_file_path_by_checksum(self, checksum: str) -> Optional[str]:
+        """根据文件校验和获取文件路径"""
+        with Session(self.engine) as session:
+            backup = session.exec(select(BackupFile).where(BackupFile.checksum == checksum)).first()
+            if backup and os.path.exists(backup.filepath):
+                return backup.filepath
+            return None
+
     # 根据 ID 获取历史记录
     def get_history_by_id(self, history_id: int):
         with Session(self.engine) as session: # 通过 Session 类创建一个数据库会话（session），self.engine 是数据库引擎（已在类中初始化），用于建立与数据库的连接。with 语句确保会话使用完毕后自动关闭，释放资源。

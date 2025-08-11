@@ -41,7 +41,7 @@ def api_history_paginated():
         result = history_db.get_history_paginated(limit=limit, offset=offset)
 
         print("::DEBUG::", "API /api/history called with limit:", limit, "offset:", offset)
-        
+
         return jsonify({'success': True, 'data': result})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -53,14 +53,14 @@ def download_file():
     if not checksum:
         return "缺少参数", 400
     
-    # 查询备份文件表
-    with Session(engine) as session:
-        backup = session.exec(select(BackupFile).where(BackupFile.checksum == checksum)).first()
-        if not backup:
-            return "文件不存在", 404
+    # 调用数据库层获取文件路径，不直接操作数据库
+    file_path = history_db.get_file_path_by_checksum(checksum)
+    
+    if not file_path:
+        return "文件不存在或已丢失", 404
         
-        # 发送文件
-        return send_file(backup.filepath, as_attachment=True)
+    # 发送文件
+    return send_file(file_path, as_attachment=True)
 
 ##############################################################################
 
