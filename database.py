@@ -287,21 +287,6 @@ class ServerGet:
                 'offset': offset
             }
 
-    # 原有 get_history 方法修改为筛选专用（其他查询功能）
-    def get_history_filtered(self, filters: dict = None, limit: int = 30, offset: int = 0) -> list:
-        """带筛选条件的查询（供其他功能使用）"""
-        with Session(self.engine) as session:
-            query = select(ClipboardHistory).order_by(ClipboardHistory.timestamp.desc())
-            if filters:
-                if filters.get('type'):
-                    query = query.where(ClipboardHistory.type == filters['type'])
-                if filters.get('source'):
-                    query = query.where(ClipboardHistory.from_equipment == filters['source'])
-                # 其他筛选条件...
-            results = session.exec(query.offset(offset).limit(limit)).all()
-            # 数据转换逻辑（同 get_history_paginated）
-            # ...
-            return records
 
     # 下载接口，根据checksum获取文件路径
     def get_file_path_by_checksum(self, checksum: str) -> Optional[str]:
@@ -336,7 +321,8 @@ class ServerGet:
 
 class ServerSet:
     def __init__(self):
-        return 0
+        self.engine = create_engine(f"sqlite:///{Config.DB_PATH}", echo=False)
+
 
 def print_all_tables(engine):
     """输出所有表的内容"""

@@ -156,5 +156,5 @@ def notify_history_update():
 
 
 if __name__ == '__main__':
-    socketio.run(app, port=5000, debug=True)  # 用 socketio.run 启动
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)  # 用 socketio.run 启动
 

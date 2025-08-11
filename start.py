@@ -5,6 +5,7 @@ import sys
 import web_server
 import history_service
 import database
+from config import Config
 
 # 全局退出标志
 exit_event = threading.Event()
@@ -17,19 +18,27 @@ def start_monitor():
         time.sleep(0.1)  # 避免CPU占用过高
 
 def start_web():
-    """启动 Web 服务（支持优雅退出）"""
+    """启动 Web 服务"""
     # 关键修复：禁用重载器
     # web_server.socketio.run(web_server.app, port=5000, debug=True)  # 用 socketio.run 启动
-    web_server.socketio.run(web_server.app, port=5000, debug=True, use_reloader=False)  # 禁用重载器
+    web_server.socketio.run(web_server.app, host='0.0.0.0', port=5000, debug=True, use_reloader=False)  # 禁用重载器
+
+def start_monitor_backup_folder(): # 监控，避免文件夹过大
+    while not exit_event.is_set():
+        history_service.monitor_backup_folder(Config.FOLDER_TO_MONITOR, Config.MAX_FOLDER_SIZE, Config.CHECK_INTERVAL)
+        time.sleep(0.1)  # 避免CPU占用过高
+
+#########################
 
 def signal_handler(sig, frame):
     """处理中断信号"""
-    print("\n接收到退出信号，正在优雅关闭服务...")
+    print("\n接收到退出信号，正在粗暴的关闭服务...")
     exit_event.set()  # 设置退出标志
     
     # 等待服务关闭（最多1秒）
     print("等待服务线程结束...")
-    monitor_thread.join(timeout=5.0)
+    monitor_thread.join(timeout=1.0)
+    web_thread.join(timeout=1.0)
     web_thread.join(timeout=1.0)
     
     # 强制退出（如果线程未正常结束）
@@ -51,10 +60,12 @@ if __name__ == "__main__":
     # 创建线程
     monitor_thread = threading.Thread(target=start_monitor, name="MonitorThread", daemon=True)
     web_thread = threading.Thread(target=start_web, name="WebThread", daemon=True)
+    monitor_backup_folder = threading.Thread(target=start_monitor_backup_folder, name="BonitorBackupBolder", daemon=True)
 
     # 启动线程
     monitor_thread.start()
     web_thread.start()
+    monitor_backup_folder.start()
     print("服务已启动，按 Ctrl+C 退出")
 
     try:
